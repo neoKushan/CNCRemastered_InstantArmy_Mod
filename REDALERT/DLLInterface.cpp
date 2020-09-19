@@ -221,6 +221,10 @@ class DLLExportClass {
 		static void Set_Event_Callback(CNC_Event_Callback_Type event_callback) {EventCallback = event_callback;}
 		static void Debug_Spawn_Unit(const char *object_name, int x, int y, bool enemy = false);
 		static void Debug_Spawn_All(int x, int y);
+		static void Debug_Spawn_All_Infantry(int x, int y);
+		static void Debug_Spawn_All_Units(int x, int y);
+		static void Debug_Spawn_All_Naval(int x, int y);
+		static void Debug_Spawn_All_Buildings(int x, int y);
 		static bool Try_Debug_Spawn_Unlimbo(TechnoClass *techno, int &cell_x, int &cell_y);
 		static void Debug_Kill_Unit(int x, int y);
 		static void Debug_Heal_Unit(int x, int y);
@@ -4129,8 +4133,71 @@ extern "C" __declspec(dllexport) void __cdecl CNC_Handle_Input(InputRequestEnum 
 
 		// MBL 09.08.2020 - Mod Support
 		case INPUT_REQUEST_MOD_GAME_COMMAND_1_AT_POSITION:
+		{
+			DLLExportClass::Adjust_Internal_View();
+			DLLForceMouseX = x1;
+			DLLForceMouseY = y1;
+			Keyboard->MouseQX = x1;
+			Keyboard->MouseQY = y1;
+
+			COORDINATE coord = Map.Pixel_To_Coord(x1, y1);
+			CELL cell = Coord_Cell(coord);
+
+			if (Map.Pixel_To_Coord(x1, y1))
+			{
+				// TBD: For our ever-awesome Community Modders!
+				//
+				// PlayerPtr->Handle_Mod_Game_Command(cell, input_event - INPUT_REQUEST_MOD_GAME_COMMAND_1_AT_POSITION);
+				DLLExportClass::Debug_Spawn_All_Infantry(x1, y1);
+			}
+
+			break;
+		}
+
 		case INPUT_REQUEST_MOD_GAME_COMMAND_2_AT_POSITION:
+		{
+			DLLExportClass::Adjust_Internal_View();
+			DLLForceMouseX = x1;
+			DLLForceMouseY = y1;
+			Keyboard->MouseQX = x1;
+			Keyboard->MouseQY = y1;
+
+			COORDINATE coord = Map.Pixel_To_Coord(x1, y1);
+			CELL cell = Coord_Cell(coord);
+
+			if (Map.Pixel_To_Coord(x1, y1))
+			{
+				// TBD: For our ever-awesome Community Modders!
+				//
+				// PlayerPtr->Handle_Mod_Game_Command(cell, input_event - INPUT_REQUEST_MOD_GAME_COMMAND_1_AT_POSITION);
+				DLLExportClass::Debug_Spawn_All_Units(x1, y1);
+			}
+
+			break;
+		}
+
 		case INPUT_REQUEST_MOD_GAME_COMMAND_3_AT_POSITION:
+		{
+			DLLExportClass::Adjust_Internal_View();
+			DLLForceMouseX = x1;
+			DLLForceMouseY = y1;
+			Keyboard->MouseQX = x1;
+			Keyboard->MouseQY = y1;
+
+			COORDINATE coord = Map.Pixel_To_Coord(x1, y1);
+			CELL cell = Coord_Cell(coord);
+
+			if (Map.Pixel_To_Coord(x1, y1))
+			{
+				// TBD: For our ever-awesome Community Modders!
+				//
+				// PlayerPtr->Handle_Mod_Game_Command(cell, input_event - INPUT_REQUEST_MOD_GAME_COMMAND_1_AT_POSITION);
+				DLLExportClass::Debug_Spawn_All_Naval(x1, y1);
+			}
+
+			break;
+		}
+
 		case INPUT_REQUEST_MOD_GAME_COMMAND_4_AT_POSITION:
 		{
 			DLLExportClass::Adjust_Internal_View();
@@ -4147,6 +4214,7 @@ extern "C" __declspec(dllexport) void __cdecl CNC_Handle_Input(InputRequestEnum 
 				// TBD: For our ever-awesome Community Modders!
 				//
 				// PlayerPtr->Handle_Mod_Game_Command(cell, input_event - INPUT_REQUEST_MOD_GAME_COMMAND_1_AT_POSITION);
+				DLLExportClass::Debug_Spawn_All_Buildings(x1, y1);
 			}
 
 			break;
@@ -8020,6 +8088,212 @@ bool DLLExportClass::Try_Debug_Spawn_Unlimbo(TechnoClass *techno, int &cell_x, i
 	return false;
 }			  
 
+void DLLExportClass::Debug_Spawn_All_Infantry(int x, int y)
+{
+	int map_cell_x = Map.MapCellX;
+	int map_cell_y = Map.MapCellY;
+
+	int map_cell_bottom = map_cell_y + Map.MapCellHeight;
+
+	int origin_x = map_cell_x + 2;
+	int origin_y = map_cell_y + 2;
+
+	if (x != 0 || y != 0) {
+		CELL screen_cell = Coord_Cell(Map.Pixel_To_Coord(x, y));
+		origin_x = Cell_X(screen_cell);
+		origin_y = Cell_Y(screen_cell);
+	}
+
+	int try_x = origin_x;
+	int try_y = origin_y;
+
+	HousesType house = PlayerPtr->Class->House;
+
+	for (InfantryType index = INFANTRY_FIRST; index < INFANTRY_COUNT; index++) {
+		InfantryTypeClass	const &infantry_type = InfantryTypeClass::As_Reference(index);
+
+		/*
+		**	Fetch the sidebar cameo image for this building.
+		*/
+		if (infantry_type.Get_Ownable() && infantry_type.Level != -1) {
+
+			for (int i = 0; i < 10; i++)
+			{
+				InfantryClass * inf = (InfantryClass*)infantry_type.Create_One_Of(PlayerPtr);
+				if (inf) {
+
+					try_x = origin_x;
+					try_y = origin_y;
+
+					while (try_y < map_cell_bottom) {
+						if (Try_Debug_Spawn_Unlimbo(inf, try_x, try_y)) {
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+void DLLExportClass::Debug_Spawn_All_Units(int x, int y)
+{
+	int map_cell_x = Map.MapCellX;
+	int map_cell_y = Map.MapCellY;
+
+	int map_cell_bottom = map_cell_y + Map.MapCellHeight;
+
+	int origin_x = map_cell_x + 2;
+	int origin_y = map_cell_y + 2;
+
+	if (x != 0 || y != 0) {
+		CELL screen_cell = Coord_Cell(Map.Pixel_To_Coord(x, y));
+		origin_x = Cell_X(screen_cell);
+		origin_y = Cell_Y(screen_cell);
+	}
+
+	int try_x = origin_x;
+	int try_y = origin_y;
+
+	HousesType house = PlayerPtr->Class->House;
+
+	for (UnitType index = UNIT_FIRST; index < UNIT_COUNT; index++) {
+		UnitTypeClass const & unit_type = UnitTypeClass::As_Reference(index);
+
+		/*
+		**	Fetch the sidebar cameo image for this building.
+		*/
+		if (unit_type.Get_Ownable() && unit_type.Level != -1 && !unit_type.IsToHarvest) {
+			for (int i = 0; i < 5; i++)
+			{
+
+				UnitClass * unit = (UnitClass*)unit_type.Create_One_Of(PlayerPtr);
+				if (unit) {
+
+					try_x = origin_x;
+					try_y = origin_y;
+
+					while (try_y < map_cell_bottom) {
+						if (Try_Debug_Spawn_Unlimbo(unit, try_x, try_y)) {
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+void DLLExportClass::Debug_Spawn_All_Naval(int x, int y)
+{
+	int map_cell_x = Map.MapCellX;
+	int map_cell_y = Map.MapCellY;
+
+	int map_cell_bottom = map_cell_y + Map.MapCellHeight;
+
+	int origin_x = map_cell_x + 2;
+	int origin_y = map_cell_y + 2;
+
+	if (x != 0 || y != 0) {
+		CELL screen_cell = Coord_Cell(Map.Pixel_To_Coord(x, y));
+		origin_x = Cell_X(screen_cell);
+		origin_y = Cell_Y(screen_cell);
+	}
+
+	int try_x = origin_x;
+	int try_y = origin_y;
+
+	HousesType house = PlayerPtr->Class->House;
+
+	for (VesselType index = VESSEL_FIRST; index < VESSEL_COUNT; index++) {
+		VesselTypeClass	const &vessel_type = VesselTypeClass::As_Reference(index);
+
+		/*
+		**	Fetch the sidebar cameo image for this building.
+		*/
+		if (vessel_type.Get_Ownable() && vessel_type.Level != -1) {
+			for (int i = 0; i < 10; i++)
+			{
+				VesselClass * boat = (VesselClass*)vessel_type.Create_One_Of(PlayerPtr);
+				if (boat) {
+
+					try_x = origin_x;
+					try_y = origin_y;
+
+					while (try_y < map_cell_bottom) {
+						if (Try_Debug_Spawn_Unlimbo(boat, try_x, try_y)) {
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+void DLLExportClass::Debug_Spawn_All_Buildings(int x, int y)
+{
+	int map_cell_x = Map.MapCellX;
+	int map_cell_y = Map.MapCellY;
+
+	int map_cell_bottom = map_cell_y + Map.MapCellHeight;
+
+	int origin_x = map_cell_x + 2;
+	int origin_y = map_cell_y + 2;
+
+	if (x != 0 || y != 0) {
+		CELL screen_cell = Coord_Cell(Map.Pixel_To_Coord(x, y));
+		origin_x = Cell_X(screen_cell);
+		origin_y = Cell_Y(screen_cell);
+	}
+
+	int try_x = origin_x;
+	int try_y = origin_y;
+
+	HousesType house = PlayerPtr->Class->House;
+
+	for (StructType sindex = STRUCT_FIRST; sindex < STRUCT_COUNT; sindex++) {
+		BuildingTypeClass const & building_type = BuildingTypeClass::As_Reference(sindex);
+
+		if (building_type.Get_Ownable() && building_type.Level != -1) {
+			
+			// Spawn lots of power plants
+			if (sindex == STRUCT_ADVANCED_POWER)
+			{
+				for (int pPlants = 0; pPlants < 10; pPlants++)
+				{
+					BuildingClass * building = new BuildingClass(building_type, house);
+					if (building) {
+
+						try_x = origin_x;
+						try_y = origin_y;
+
+						while (try_y < map_cell_bottom) {
+							if (Try_Debug_Spawn_Unlimbo(building, try_x, try_y)) {
+								break;
+							}
+						}
+					}
+				}
+			}
+			else
+			{
+				BuildingClass * building = new BuildingClass(building_type, house);
+				if (building) {
+
+					try_x = origin_x;
+					try_y = origin_y;
+
+					while (try_y < map_cell_bottom) {
+						if (Try_Debug_Spawn_Unlimbo(building, try_x, try_y)) {
+							break;
+						}
+					}
+				}
+			}
+		}	
+	}
+}
 
 /**************************************************************************************************
 * DLLExportClass::Debug_Spawn_All -- Debug spawn all buildable units and structures
